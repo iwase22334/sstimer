@@ -48,6 +48,10 @@ pub fn start(sound_control: mpsc::SyncSender<SoundControl>, identifier: String)
                             spend = Duration::from_secs(0);
                             duration = Some(Duration::from_secs(duration_sec.into()));
                             println!("ticker_core: recv Start {:?}", duration);
+
+                            // notification variable must initialized at initialization phase
+                            assert!(!notification.is_none());
+                            notify_user_start(notification.as_ref().unwrap(), &sound_control);
                         }
 
                         TickerControl::Stop => {
@@ -94,14 +98,19 @@ pub fn start(sound_control: mpsc::SyncSender<SoundControl>, identifier: String)
                     assert!(!notification.is_none());
                     notify_user(notification.as_ref().unwrap(), &sound_control, &identifier);
 
+                    ticker_notice_tx.try_send(TickerStateNotice::Position(0))
+                            .unwrap_or_else(|_| println!("Failed to try_send current position"));
+
                 } else {
                     start_time = Some(Instant::now());
-                }
-            }
 
-            ticker_notice_tx.try_send(
-                TickerStateNotice::Position(spend.as_secs().try_into().unwrap()))
-                    .unwrap_or_else(|_| println!("Failed to try_send current position"));
+                    ticker_notice_tx.try_send(
+                        TickerStateNotice::Position((duration.unwrap() - spend).as_secs().try_into().unwrap()))
+                            .unwrap_or_else(|_| println!("Failed to try_send current position"));
+                }
+
+
+            }
 
             print!("start_time {:?}", start_time);
             print!("duration {:?}", duration);
@@ -111,6 +120,23 @@ pub fn start(sound_control: mpsc::SyncSender<SoundControl>, identifier: String)
     });
 
     (ticker_control_tx, ticker_notice_rx)
+}
+
+fn notify_user_start(notification: &NotificationType, tx: &mpsc::SyncSender<SoundControl>) {
+    match notification {
+        NotificationType::VoiceSound(n) => {
+            tx.send(
+                SoundControl::PlayPo)
+                    .unwrap_or_else(|_| println!("Failed to try_send current position"));
+        },
+        NotificationType::Sound => {
+            tx.send(
+                SoundControl::PlayPo)
+                    .unwrap_or_else(|_| println!("Failed to try_send current position"));
+        },
+        NotificationType::Toast => {
+        },
+    }
 }
 
 fn notify_user(notification: &NotificationType, tx: &mpsc::SyncSender<SoundControl>, identifier: &String) {

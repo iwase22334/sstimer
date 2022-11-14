@@ -5,7 +5,6 @@ type Props = { children: React.ReactNode }
 
 type AppContextType = {
     windowPosition:   [PhysicalPosition, React.Dispatch<PhysicalPosition>],
-    position:         [number, React.Dispatch<number>],
     notificationType: [string, React.Dispatch<string>],
     voice:            [string, React.Dispatch<string>],
 }
@@ -19,13 +18,6 @@ export const AppContextProvider: React.FC<Props> = (props) => {
 
         return initWinPosition === null ? {x: 10, y: 10} : initWinPosition;
     });
-
-    const [position, setPosition] = React.useState(() => {
-        const json = localStorage.getItem("sstimer-posisiton");
-        const initPosition = json === null ? null : JSON.parse(json);
-
-        return initPosition === null ? 15 * 60 : initPosition;
-    })
 
     const [notificationType, setNotificationType] = React.useState(() => {
         const json = localStorage.getItem("sstimer-NotificationType");
@@ -44,7 +36,6 @@ export const AppContextProvider: React.FC<Props> = (props) => {
     return(
         <AppContext.Provider value = {{
             windowPosition: [winPosition, setWinPosition],
-            position: [position, setPosition],
             notificationType: [notificationType, setNotificationType],
             voice: [voice, setVoice]
             }}>

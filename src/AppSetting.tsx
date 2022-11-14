@@ -26,7 +26,7 @@ export const AppSetting = () => {
         { capture: true }
     );
 
-    const {windowPosition, position, notificationType, voice} = React.useContext(AppContext);
+    const {windowPosition, notificationType, voice} = React.useContext(AppContext);
 
     const [notificationTypeState, setNotificationTypeState] = notificationType;
     const [voiceState, setVoiceState] = voice;

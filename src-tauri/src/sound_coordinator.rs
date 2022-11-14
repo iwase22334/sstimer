@@ -34,6 +34,7 @@ impl TryFrom<u32> for VoiceIndex {
 pub enum SoundControl {
     PlayVoiceSound(VoiceIndex),
     PlaySound,
+    PlayPo,
     Volume(u32),
     Quit,
 }
@@ -46,7 +47,7 @@ pub fn start() -> mpsc::SyncSender<SoundControl> {
     std::thread::spawn(move || {
         let (mut _os, mut osh)
             = rodio::OutputStream::try_default().expect("failed to open sound device");
-        let mut sink: Sink = Sink::try_new(&osh).expect("failed to create new sink");
+        let mut sink_opt: Option<Sink> = None;
 
         loop {
             match rx.recv() {
@@ -55,21 +56,29 @@ pub fn start() -> mpsc::SyncSender<SoundControl> {
                         SoundControl::PlayVoiceSound(n) => {
                             println!("sound_coordinator: recv Play voicesound");
 
-                            play_popopo(&mut sink);
+                            sink_opt = Some(Sink::try_new(&osh).expect("failed to create new sink"));
+                            play_popopo(&mut sink_opt.as_mut().unwrap());
                             let source = rodio::Decoder::new(
                                 std::io::Cursor::new(voice_store.get_data((n as u32).try_into().unwrap()).clone()))
                                     .expect("failed to decord wav");
-                            sink.append(source);
+                            sink_opt.as_ref().unwrap().append(source);
                         },
 
                         SoundControl::PlaySound => {
                             println!("sound_coordinator: recv PlaySound");
-                            play_popopo(&mut sink);
+                            sink_opt = Some(Sink::try_new(&osh).expect("failed to create new sink"));
+                            play_popopo(&mut sink_opt.as_mut().unwrap());
+                        },
+
+                        SoundControl::PlayPo => {
+                            println!("sound_coordinator: recv PlayPo");
+                            sink_opt = Some(Sink::try_new(&osh).expect("failed to create new sink"));
+                            play_po(&mut sink_opt.as_mut().unwrap());
                         },
 
                         SoundControl::Volume(n) => {
                             println!("sound_coordinator: recv Volume {:?}", n);
-                            sink.set_volume(n as f32 / 100f32);
+                            sink_opt.as_ref().unwrap().set_volume(n as f32 / 100f32);
                         },
 
                         SoundControl::Quit => {
@@ -83,16 +92,26 @@ pub fn start() -> mpsc::SyncSender<SoundControl> {
 
         }
 
-        sink.sleep_until_end();
         println!("sound_coordinator: thread exit");
     });
 
     return tx;
 }
 
+fn play_po(sink: &mut Sink) {
+        sink.append(
+            SineWave::new(880.0)
+                .take_duration(Duration::from_secs_f32(0.05))
+                .amplify(0.20));
+        sink.append(
+            SineWave::new(0.)
+                .take_duration(Duration::from_secs_f32(0.05))
+                .amplify(0.20));
+}
+
 fn play_popopo(sink: &mut Sink) {
         sink.append(
-            SineWave::new(440.0)
+            SineWave::new(880.0)
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(
@@ -100,7 +119,7 @@ fn play_popopo(sink: &mut Sink) {
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(
-            SineWave::new(440.0)
+            SineWave::new(880.0)
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(
@@ -108,7 +127,7 @@ fn play_popopo(sink: &mut Sink) {
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(
-            SineWave::new(440.0)
+            SineWave::new(880.0)
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(
@@ -116,7 +135,7 @@ fn play_popopo(sink: &mut Sink) {
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(
-            SineWave::new(440.0)
+            SineWave::new(880.0)
                 .take_duration(Duration::from_secs_f32(0.05))
                 .amplify(0.20));
         sink.append(

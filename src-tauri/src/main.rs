@@ -70,7 +70,7 @@ fn start_emitter(rx: mpsc::Receiver<TickerStateNotice>, app_handle: tauri::AppHa
                         TickerStateNotice::Stop => {
                             println!("Main: stopped");
                             app_handle
-                                .emit_all("startState", "")
+                                .emit_all("startState", "stop")
                                 .unwrap();
 
                             println!("Main: stop");
@@ -139,21 +139,15 @@ fn main() {
             Ok(())
         });
 
-    let is_minimized = |window: &tauri::window::Window| -> bool {
-        let outer_pos = window.outer_position().unwrap();
-
-        println!("{:?}", outer_pos);
-        if outer_pos.x <= -32000 { true } else { false }
-    };
-
     let app = app.on_system_tray_event(move |app, event| match event {
             SystemTrayEvent::LeftClick { .. } => {
                 let window = app.get_window("main").unwrap();
-                if !is_minimized(&window) {
-                    window.minimize().unwrap();
+                if !window.is_visible().unwrap() {
+                    window.show().unwrap();
+                    window.unminimize().unwrap();
                     window.set_focus().unwrap();
                 } else {
-                    window.unminimize().unwrap();
+                    window.minimize().unwrap();
                 }
             }
             SystemTrayEvent::MenuItemClick { id, .. } => {
@@ -184,6 +178,14 @@ fn main() {
                 }
             }
             _ => {}
+        });
+
+     let app = app.on_window_event(|event| {
+            if let WindowEvent::Moved(position) = event.event() {
+                if position.x == -32000 && position.y == -32000 {
+                    event.window().hide().unwrap();
+                }
+            }
         });
 
     let app = app.system_tray(system_tray);
