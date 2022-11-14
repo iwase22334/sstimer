@@ -110,7 +110,7 @@ fn main() {
     );
 
     let about = r#"
-        sstimer
+    Simple Slider Timer
   version 1.0.0 by tapoh
 
    声
